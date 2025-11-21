@@ -4,12 +4,16 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - DOCKER_MODE=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   caddy:
     image: caddy:alpine
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
