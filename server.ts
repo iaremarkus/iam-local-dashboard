@@ -17,10 +17,8 @@ const handle = app.getRequestHandler();
 
 // CONFIGURATION: Define single ports OR ranges
 const PORTS_TO_SCAN = [
-  3000,
-  "3001-3010", // Scans range
+  "3000-3010", // Scans range
   4200,
-  5173,
   "5173-5176", // Vite
   8000,
   "8080-8090",
@@ -53,12 +51,12 @@ const parsePorts = (config: (number | string)[]): number[] => {
 // 2. Check if a single port is open (TCP check)
 const checkPort = (port: number): Promise<boolean> => {
   return new Promise((resolve) => {
-    const hosts = [SCAN_HOST]; 
-    // If not in docker mode, we might want to try ::1 too, but for simplicity 
+    const hosts = [SCAN_HOST];
+    // If not in docker mode, we might want to try ::1 too, but for simplicity
     // and to fix the docker issue, let's stick to the primary host.
     // If local, SCAN_HOST is 127.0.0.1.
     if (SCAN_HOST === "127.0.0.1") {
-        hosts.push("::1");
+      hosts.push("::1");
     }
 
     let settled = false;
@@ -97,7 +95,7 @@ const checkPort = (port: number): Promise<boolean> => {
 const getServiceDetails = async (port: number) => {
   const hosts = [SCAN_HOST];
   if (SCAN_HOST === "127.0.0.1") {
-      hosts.push("[::1]");
+    hosts.push("[::1]");
   }
 
   for (const host of hosts) {
@@ -127,13 +125,13 @@ const getServiceDetails = async (port: number) => {
       // IMPORTANT: We want the frontend to use localhost, not host.docker.internal
       // So we use the baseUrl for resolving relative paths, but the final URL
       // sent to frontend should use localhost if possible, OR we just pass the path
-      // and let frontend handle it? 
+      // and let frontend handle it?
       // Actually, `new URL(path, baseUrl)` creates a string with `http://host.docker.internal:port/...`
       // We need to replace that host with localhost for the user's browser.
-      
+
       const resolvedUrl = new URL(faviconPath, baseUrl);
       if (resolvedUrl.hostname === "host.docker.internal") {
-          resolvedUrl.hostname = "localhost";
+        resolvedUrl.hostname = "localhost";
       }
       const favicon = resolvedUrl.href;
 
@@ -163,15 +161,14 @@ const performScan = async () => {
     const chunkResults = await Promise.all(
       chunk.map(async (port) => {
         // Don't scan our own port to avoid recursion/confusion if we were in the list
-        if (port === 3000) return null; 
+        if (port === 3000) return null;
         const isOpen = await checkPort(port);
         return isOpen ? port : null;
       })
     );
 
-    openPorts.push(...chunkResults.filter((p) => p !== null) as number[]);
+    openPorts.push(...(chunkResults.filter((p) => p !== null) as number[]));
   }
-  
 
   // Fetch details for open ports
   const finalResults = await Promise.all(
@@ -204,7 +201,7 @@ app.prepare().then(() => {
 
   server.on("upgrade", (req, socket, head) => {
     const parsedUrl = parse(req.url || "", true);
-    
+
     // Only handle upgrades for our custom WebSocket endpoint
     if (parsedUrl.pathname === "/ws") {
       wss.handleUpgrade(req, socket, head, (ws) => {
@@ -220,21 +217,18 @@ app.prepare().then(() => {
   });
 
   wss.on("connection", (ws) => {
-    
     ws.on("error", (err) => {
       console.error("WebSocket client error:", err);
     });
 
     // Send immediate scan on connection
     performScan().then((data) => {
-        if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify(data));
-        }
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(data));
+      }
     });
 
-    ws.on("close", () => {
-
-    });
+    ws.on("close", () => {});
   });
 
   // Periodic scan
