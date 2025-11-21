@@ -29,14 +29,15 @@ const getGradient = (id: number) => {
 export default function Home() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}`;
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log("Connected to WebSocket");
+      setError(null);
     };
 
     ws.onmessage = (event) => {
@@ -46,16 +47,18 @@ export default function Home() {
         setLoading(false);
       } catch (e) {
         console.error("Failed to parse WS message", e);
+        setError("Failed to parse server response");
+        setLoading(false);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error", error);
+    ws.onerror = (event) => {
+      console.error("WebSocket error", event);
+      setError("WebSocket connection failed. Check console for details.");
+      setLoading(false);
     };
 
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
+    ws.onclose = () => {};
 
     return () => {
       ws.close();
@@ -116,11 +119,24 @@ export default function Home() {
 
       <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-20">
         <AnimatePresence mode="popLayout">
-          {loading &&
-           <motion.div  className={classNames("w-full h-full flex items-center justify-center","col-span-1 sm:col-span-2 md:col-span-3")}><LoaderIcon className="animate-spin size-20" /></motion.div>
-            }
+          {error && (
+            <div className="col-span-full text-center py-20">
+              <p className="text-xl text-red-500 font-medium">{error}</p>
+            </div>
+          )}
 
-          {!loading && services.length === 0 && (
+          {loading && (
+            <motion.div
+              className={classNames(
+                "w-full h-full flex items-center justify-center",
+                "col-span-1 sm:col-span-2 md:col-span-3"
+              )}
+            >
+              <LoaderIcon className="animate-spin size-20" />
+            </motion.div>
+          )}
+
+          {!loading && !error && services.length === 0 && (
             <div className="col-span-full text-center py-20">
               <p className="text-xl text-slate-400 font-medium">
                 No active services found.
@@ -129,6 +145,7 @@ export default function Home() {
           )}
 
           {!loading &&
+            !error &&
             services.map((service, idx) => (
               <motion.a
                 key={service.port}
@@ -153,13 +170,13 @@ export default function Home() {
                   )}
                 >
                   <div className="text-right w-full">
-                    <h3 className="text-xl font-bold text-black leading-none truncate">
+                    <h3 className="text-xl font-bold text-black leading-none truncate text-shadow-[0_0_4px_rgba(0,0,0,0.2)]">
                       {service.title}
                     </h3>
                     <h4
                       className={classNames(
-                        "text-sm text-black/20 absolute -rotate-90 origin-top-left",
-                        "-bottom-5 w-full text-right px-4 left-[90%] font-mono"
+                        "text-sm text-black/40 absolute -rotate-90 origin-top-left",
+                        "-bottom-5 w-full text-right px-4 left-[90%] font-mono text-shadow-[0_0_3px_rgba(0,0,0,0.2)]"
                       )}
                     >
                       {service.url}
@@ -191,7 +208,8 @@ export default function Home() {
                       )}
                     >
                       {service.favicon ? (
-                        <Image
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
                           src={service.favicon}
                           alt="icon"
                           width={48}

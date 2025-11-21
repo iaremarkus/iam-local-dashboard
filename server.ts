@@ -28,7 +28,7 @@ const PORTS_TO_SCAN = [
 ];
 
 // Determine scan target
-const SCAN_HOST = process.env.DOCKER_MODE === "true" ? "host.docker.internal" : "127.0.0.1";
+const SCAN_HOST = "127.0.0.1";
 
 // 1. Expand config into a flat array of numbers
 const parsePorts = (config: (number | string)[]): number[] => {
@@ -171,6 +171,7 @@ const performScan = async () => {
 
     openPorts.push(...chunkResults.filter((p) => p !== null) as number[]);
   }
+  
 
   // Fetch details for open ports
   const finalResults = await Promise.all(
@@ -199,11 +200,31 @@ app.prepare().then(() => {
     }
   });
 
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({ noServer: true });
+
+  server.on("upgrade", (req, socket, head) => {
+    const parsedUrl = parse(req.url || "", true);
+    
+    // Only handle upgrades for our custom WebSocket endpoint
+    if (parsedUrl.pathname === "/ws") {
+      wss.handleUpgrade(req, socket, head, (ws) => {
+        wss.emit("connection", ws, req);
+      });
+    } else {
+      // For HMR and others, we can't easily handle it in custom server without deep integration.
+      // We just destroy the socket to prevent hanging, or ignore it.
+      // Next.js HMR might try to connect, fail, and retry.
+      // Ideally we would pass it to Next.js, but there's no public API for that in custom server.
+      // Let's just ignore it for now.
+    }
+  });
 
   wss.on("connection", (ws) => {
-    console.log("Client connected");
     
+    ws.on("error", (err) => {
+      console.error("WebSocket client error:", err);
+    });
+
     // Send immediate scan on connection
     performScan().then((data) => {
         if (ws.readyState === WebSocket.OPEN) {
@@ -212,7 +233,7 @@ app.prepare().then(() => {
     });
 
     ws.on("close", () => {
-      console.log("Client disconnected");
+
     });
   });
 
