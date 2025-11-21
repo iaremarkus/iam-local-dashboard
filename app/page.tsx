@@ -30,22 +30,50 @@ export default function Home() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const scanNetwork = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/scan");
-      const data = await res.json();
-      setServices(data);
-    } catch (error) {
-      console.error("Failed to scan", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    scanNetwork();
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log("Connected to WebSocket");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setServices(data);
+        setLoading(false);
+      } catch (e) {
+        console.error("Failed to parse WS message", e);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error", error);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket disconnected");
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
+
+  const scanNetwork = () => {
+    // Optional: Send a message to server to request immediate scan
+    // For now, the server scans periodically, so we might not need this button to do anything
+    // or we could implement a message type to trigger scan.
+    // But the user asked to remove the need to click refresh.
+    // We can keep the button as a visual indicator or trigger a re-connect if needed.
+    // Let's just log for now or maybe trigger a manual fetch if we wanted to keep the API route,
+    // but we are moving to WS.
+    // Actually, let's just leave it empty or remove the button functionality.
+    // The server sends an immediate scan on connect.
+    window.location.reload(); // Simple fallback for "refresh" button if they really want to force it
+  };
 
   return (
     <main
@@ -89,12 +117,8 @@ export default function Home() {
       <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-20">
         <AnimatePresence mode="popLayout">
           {loading &&
-            [1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="aspect-square rounded-2xl bg-white/50 animate-pulse border border-slate-200"
-              />
-            ))}
+           <motion.div  className={classNames("w-full h-full flex items-center justify-center","col-span-1 sm:col-span-2 md:col-span-3")}><LoaderIcon className="animate-spin size-20" /></motion.div>
+            }
 
           {!loading && services.length === 0 && (
             <div className="col-span-full text-center py-20">
