@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+![IAM Local Dashboard](https://iam-dropfiles.s3.af-south-1.amazonaws.com/Dropover/local-dashboard.png)
 
-## Getting Started
+# IAM Local Dashboard
 
-First, run the development server:
+A real-time dashboard that automatically discovers and displays all your running localhost services in one place.
+
+## What it does
+
+IAM Local Dashboard watches through a [range of ports](#scanned-ports) for running development servers and displays them as interactive cards. Each card shows:
+
+- Service name (extracted from the page title)
+- Port number
+- Favicon (when available)
+- Direct link to open the service
+
+The dashboard updates automatically via WebSocket - no manual refreshing needed. When you start or stop a local service, it appears or disappears from the dashboard in real-time.
+
+## Scanned Ports
+
+By default, the following ports are scanned:
+
+- `3001-3010` - Node.js/React apps
+- `4200` - Angular
+- `5173-5180` - Vite
+- `8000` - Python/Django
+- `8080-8090` - Various dev servers
+- `1313` - Hugo
+
+You can customize the scanned ports in `server.ts` by modifying the `PORTS_TO_SCAN` array.
+
+## Prerequisites
+
+- Node.js (v18+)
+- [Caddy](https://caddyserver.com/) - Used as a reverse proxy
+
+### Installing Caddy
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# macOS
+brew install caddy
+
+# Linux
+sudo apt install -y caddy
+
+# Or download from https://caddyserver.com/download
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository and install dependencies:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun install
+```
 
-## Learn More
+2. Start the development server:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. Open [https://mylocal.localhost](https://mylocal.localhost) or [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How it works
 
-## Deploy on Vercel
+1. A custom Next.js server (`server.ts`) runs alongside the app
+2. The server performs TCP port scans every 3 seconds to detect open ports
+3. For each open port, it fetches the page title and favicon
+4. Results are pushed to connected clients via WebSocket
+5. Caddy proxies requests and handles WebSocket upgrades
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js 16](https://nextjs.org/) - React framework
+- [Framer Motion](https://www.framer.com/motion/) - Animations
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [Cheerio](https://cheerio.js.org/) - HTML parsing for titles/favicons
+- [ws](https://github.com/websockets/ws) - WebSocket server
+- [Caddy](https://caddyserver.com/) - Reverse proxy
