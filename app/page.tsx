@@ -2,7 +2,7 @@
 import classNames from "classnames";
 import { AnimatePresence, motion } from "framer-motion";
 import { LoaderIcon, RefreshCcw } from "lucide-react";
-import Image from "next/image";
+
 import { useEffect, useState } from "react";
 
 type Service = {
@@ -85,38 +85,6 @@ export default function Home() {
         "flex flex-col items-center justify-center"
       )}
     >
-      <div className="w-full max-w-6xl flex justify-between items-center mb-12 mt-4">
-        <button
-          onClick={scanNetwork}
-          className={classNames(
-            "fixed top-4 right-4 rounded-full font-medium transition-all active:scale-95 shadow-lg",
-            "bg-black hover:bg-slate-800 text-white size-14 flex items-center justify-center"
-          )}
-        >
-          <AnimatePresence mode="popLayout">
-            {loading ? (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.1 }}
-              >
-                <LoaderIcon className="animate-spin" />
-              </motion.span>
-            ) : (
-              <motion.span
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.1 }}
-              >
-                <RefreshCcw />
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </button>
-      </div>
-
       <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-20">
         <AnimatePresence mode="popLayout">
           {error && (
