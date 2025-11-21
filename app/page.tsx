@@ -88,28 +88,44 @@ export default function Home() {
       <div className="w-full max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-20">
         <AnimatePresence mode="popLayout">
           {error && (
-            <div className="col-span-full text-center py-20">
+            <motion.div
+              key="error"
+              className="col-span-full text-center py-20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
               <p className="text-xl text-red-500 font-medium">{error}</p>
-            </div>
+            </motion.div>
           )}
 
           {loading && (
             <motion.div
+              key="loading"
               className={classNames(
                 "w-full h-full flex items-center justify-center",
                 "col-span-1 sm:col-span-2 md:col-span-3"
               )}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
               <LoaderIcon className="animate-spin size-20" />
             </motion.div>
           )}
 
           {!loading && !error && services.length === 0 && (
-            <div className="col-span-full text-center py-20">
+            <motion.div
+              key="no-services"
+              className="col-span-full text-center py-20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
               <p className="text-xl text-slate-400 font-medium">
                 No active services found.
               </p>
-            </div>
+            </motion.div>
           )}
 
           {!loading &&
